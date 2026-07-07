@@ -23,7 +23,7 @@
 - Power-ups (multi-ball, paddle más grande, etc.).
 - Niveles múltiples o sistema de selección de niveles.
 - Persistencia de high-scores (localStorage).
-- Controles con mouse.
+- Controles con teclado usando cursores izquierda y derecha. 
 - Sonidos o música.
 - Efectos visuales avanzados (partículas, animaciones complejas).
 
