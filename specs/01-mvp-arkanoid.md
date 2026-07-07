@@ -1,6 +1,6 @@
 # SPEC 01 — MVP jugable de Arkanoid
 
-> **Status:** Draft
+> **Status:** Implementado
 > **Depends on:** —
 > **Date:** 2026-07-07
 > **Objective:** Implementar un juego de Arkanoid jugable con paddle, pelota, ladrillos con HP por color, 1 nivel, sistema de puntuación y 3 vidas.
