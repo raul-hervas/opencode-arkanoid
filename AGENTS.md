@@ -2,22 +2,29 @@
 
 ## Project
 
-Arkanoid/Breakout game. Vanilla HTML + CSS + JS, zero dependencies. Open `index.html` in browser to run.
+Arkanoid/Breakout game. Vanilla HTML + CSS + JS, zero dependencies. Canvas: 480×640. Open `index.html` in browser to run (no build, no server).
 
-## Current state
+## Structure
 
-Game not yet implemented. Only assets exist: spritesheet image + `assets/spritesheet.js` (sprite definitions + loader).
+- `index.html` — minimal HTML, loads scripts in order
+- `game.js` — all game logic (single file, ~460 lines)
+- `assets/spritesheet.js` — sprite definitions + loader (globals)
+- `assets/spritesheet-breakout.png` — sprite atlas
+- `assets/audio/` — hit.wav, break.wav, bounce.wav
 
 ## Spritesheet API
 
-`assets/spritesheet.js` exports globals: `SPRITES`, `EXPLOSION_FRAMES`, `loadSpritesheet(cb)`, `drawSprite(ctx, name, x, y, w, h)`, `drawFrame(ctx, frame, x, y, w, h)`. Block sprites accessed via `drawSprite(ctx, 'block_red', ...)`. Spritesheet loads from `assets/spritesheet-breakout.png` relative to HTML file.
+Global functions from `assets/spritesheet.js`:
+- `loadSpritesheet(callback)` — load atlas, call cb when ready
+- `drawSprite(ctx, name, x, y, w, h)` — draw named sprite (e.g. `'block_red'`, `'paddle'`, `'ball'`)
 
-## Workflow: spec-driven
+## Run
 
-Use `/spec` skill to define features before coding. Specs go in `specs/` as `NN-slug.md`. Use `/spec-impl NN-slug` to implement approved specs. Config: `specs/.spec-config.yml` (AutoCreateBranch defaults true).
+Open `index.html` directly in browser. No npm, no build, no dev server.
 
 ## Conventions
 
-- Language: Spanish (README, prompts). Code comments: follow existing.
-- No build step, no bundler, no transpiler. Raw browser JS.
-- Keep files minimal. Prefer single-file game logic until size demands splitting.
+- Language: Spanish (README, prompts). Code comments: follow existing style.
+- No bundler, no transpiler. Raw browser JS with globals.
+- Single-file game logic preferred until size demands splitting.
+- All specs implemented (01-05). Use spec workflow for new features.
