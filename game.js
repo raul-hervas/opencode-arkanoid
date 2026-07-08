@@ -10,6 +10,7 @@ const state = {
   particles: [],
   lifeFade: 0,
   currentLevel: 0,
+  levelComplete: false,
 };
 
 const paddle = {
@@ -61,9 +62,9 @@ const LIVES_DISPLAY = {
 };
 
 const DIFFICULTY = {
-  easy: { name: 'Fácil', ballSpeed: 4, scoreMultiplier: 1 },
-  normal: { name: 'Normal', ballSpeed: 6, scoreMultiplier: 1.5 },
-  hard: { name: 'Difícil', ballSpeed: 8, scoreMultiplier: 2 },
+  easy: { name: 'Fácil', ballSpeed: 3.5, scoreMultiplier: 1 },
+  normal: { name: 'Normal', ballSpeed: 5, scoreMultiplier: 1.5 },
+  hard: { name: 'Difícil', ballSpeed: 6.5, scoreMultiplier: 2 },
 };
 
 const LEVELS = [
@@ -261,9 +262,8 @@ function update() {
 
   if (bricks.every(b => !b.alive)) {
     if (state.currentLevel < LEVELS.length - 1) {
-      state.currentLevel++;
-      createBricks();
-      resetBall();
+      state.levelComplete = true;
+      state.running = false;
     } else {
       state.running = false;
       state.gameOver = true;
@@ -403,6 +403,24 @@ function render() {
     ctx.fillText('Press Enter to restart', canvas.width / 2, canvas.height / 2 + 60);
     ctx.textAlign = 'left';
   }
+
+  if (state.levelComplete) {
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#2ecc71';
+    ctx.font = '36px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('LEVEL COMPLETE!', canvas.width / 2, canvas.height / 2 - 40);
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px monospace';
+    ctx.fillText('Score: ' + state.score, canvas.width / 2, canvas.height / 2 + 10);
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = '16px monospace';
+    ctx.fillText('Next: ' + DIFFICULTY[LEVELS[state.currentLevel + 1].difficulty].name, canvas.width / 2, canvas.height / 2 + 40);
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Press Enter to continue', canvas.width / 2, canvas.height / 2 + 70);
+    ctx.textAlign = 'left';
+  }
 }
 
 document.addEventListener('keydown', (e) => {
@@ -412,6 +430,12 @@ document.addEventListener('keydown', (e) => {
       resetGame();
     } else if (state.gameOver) {
       resetGame();
+    } else if (state.levelComplete) {
+      state.currentLevel++;
+      state.levelComplete = false;
+      createBricks();
+      resetBall();
+      state.running = true;
     }
   }
 });
