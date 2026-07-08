@@ -7,6 +7,7 @@ const state = {
   running: false,
   gameOver: false,
   started: false,
+  particles: [],
 };
 
 const paddle = {
@@ -33,6 +34,60 @@ const BRICK_COLORS = ['red', 'green', 'cyan', 'yellow', 'magenta', 'hotpink', 'g
 const BRICK_ROWS = 5;
 const BRICK_COLS = Math.floor(canvas.width / 64);
 const bricks = [];
+
+const PARTICLES = {
+  count: 8,
+  gravity: 0.15,
+  bounce: 0.4,
+  maxLife: 60,
+  maxActive: 100,
+};
+
+const FLASH = {
+  duration: 6,
+};
+
+function spawnParticles(x, y, color) {
+  for (let i = 0; i < PARTICLES.count; i++) {
+    if (state.particles.length >= PARTICLES.maxActive) {
+      state.particles.shift();
+    }
+    state.particles.push({
+      x: x,
+      y: y,
+      dx: (Math.random() - 0.5) * 6,
+      dy: -(Math.random() * 4 + 1),
+      size: Math.random() * 3 + 2,
+      color: color,
+      life: PARTICLES.maxLife,
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = state.particles.length - 1; i >= 0; i--) {
+    const p = state.particles[i];
+    p.dy += PARTICLES.gravity;
+    p.x += p.dx;
+    p.y += p.dy;
+    p.life--;
+    if (p.y + p.size >= canvas.height) {
+      p.y = canvas.height - p.size;
+      p.dy = -p.dy * PARTICLES.bounce;
+    }
+    if (p.life <= 0) {
+      state.particles.splice(i, 1);
+    }
+  }
+}
+
+function updateFlashes() {
+  for (const b of bricks) {
+    if (b.flash > 0) {
+      b.flash--;
+    }
+  }
+}
 
 let lastTime = 0;
 let fps = 0;
@@ -103,10 +158,14 @@ function update() {
       } else {
         ball.dy = -ball.dy;
       }
+      if (b.hp > 1) {
+        b.flash = FLASH.duration;
+      }
       b.hp--;
       if (b.hp <= 0) {
         b.alive = false;
         state.score += BRICK_SCORE * BRICK_HP[b.color];
+        spawnParticles(b.x + b.width / 2, b.y + b.height / 2, b.color);
       }
       break;
     }
@@ -121,6 +180,9 @@ function update() {
       resetBall();
     }
   }
+
+  updateParticles();
+  updateFlashes();
 }
 
 function resetBall() {
@@ -154,8 +216,16 @@ function createBricks() {
         color: color,
         hp: BRICK_HP[color],
         alive: true,
+        flash: 0,
       });
     }
+  }
+}
+
+function drawParticles(ctx) {
+  for (const p of state.particles) {
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
   }
 }
 
@@ -165,10 +235,16 @@ function render() {
   for (const b of bricks) {
     if (b.alive) {
       drawSprite(ctx, 'block_' + b.color, b.x, b.y, b.width, b.height);
+      if (b.flash > 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillRect(b.x, b.y, b.width, b.height);
+      }
     }
   }
   drawSprite(ctx, 'paddle', paddle.x, paddle.y, paddle.width, paddle.height);
   drawSprite(ctx, 'ball', ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
+
+  drawParticles(ctx);
 
   ctx.fillStyle = '#fff';
   ctx.font = '16px monospace';
