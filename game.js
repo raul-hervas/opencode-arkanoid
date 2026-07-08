@@ -9,6 +9,7 @@ const state = {
   started: false,
   particles: [],
   lifeFade: 0,
+  currentLevel: 0,
 };
 
 const paddle = {
@@ -59,6 +60,18 @@ const LIVES_DISPLAY = {
   fadeSpeed: 8,
 };
 
+const DIFFICULTY = {
+  easy: { name: 'Fácil', ballSpeed: 4, scoreMultiplier: 1 },
+  normal: { name: 'Normal', ballSpeed: 6, scoreMultiplier: 1.5 },
+  hard: { name: 'Difícil', ballSpeed: 8, scoreMultiplier: 2 },
+};
+
+const LEVELS = [
+  { difficulty: 'easy', layout: 'level1' },
+  { difficulty: 'normal', layout: 'level2' },
+  { difficulty: 'hard', layout: 'level3' },
+];
+
 const SOUND_PATHS = {
   hit: 'assets/audio/hit.wav',
   break: 'assets/audio/break.wav',
@@ -106,6 +119,10 @@ function toggleMute() {
   for (const sound of Object.values(audio.sounds)) {
     if (sound) sound.volume = audio.muted ? 0 : 1;
   }
+}
+
+function getDifficulty() {
+  return DIFFICULTY[LEVELS[state.currentLevel].difficulty];
 }
 
 function spawnParticles(x, y, color) {
@@ -234,11 +251,22 @@ function update() {
       b.hp--;
       if (b.hp <= 0) {
         b.alive = false;
-        state.score += BRICK_SCORE * BRICK_HP[b.color];
+        state.score += Math.round(BRICK_SCORE * BRICK_HP[b.color] * getDifficulty().scoreMultiplier);
         spawnParticles(b.x + b.width / 2, b.y + b.height / 2, b.color);
         playSound('break');
       }
       break;
+    }
+  }
+
+  if (bricks.every(b => !b.alive)) {
+    if (state.currentLevel < LEVELS.length - 1) {
+      state.currentLevel++;
+      createBricks();
+      resetBall();
+    } else {
+      state.running = false;
+      state.gameOver = true;
     }
   }
 
@@ -247,6 +275,7 @@ function update() {
     if (state.lives <= 0) {
       state.running = false;
       state.gameOver = true;
+      state.currentLevel = 0;
     } else {
       state.lifeFade = LIVES_DISPLAY.fadeSpeed;
       resetBall();
@@ -261,8 +290,9 @@ function update() {
 function resetBall() {
   ball.x = canvas.width / 2;
   ball.y = canvas.height - 30;
-  ball.dx = 4;
-  ball.dy = -4;
+  const speed = getDifficulty().ballSpeed;
+  ball.dx = speed;
+  ball.dy = -speed;
 }
 
 function resetGame() {
@@ -271,6 +301,7 @@ function resetGame() {
   state.gameOver = false;
   state.started = true;
   state.running = true;
+  state.currentLevel = 0;
   paddle.x = canvas.width / 2 - 40;
   createBricks();
   resetBall();
@@ -345,6 +376,7 @@ function render() {
   ctx.fillStyle = '#fff';
   ctx.font = '16px monospace';
   ctx.fillText('Score: ' + state.score, 10, 20);
+  ctx.fillText(getDifficulty().name, 10, 40);
 
   if (!state.started) {
     ctx.fillStyle = 'rgba(0,0,0,0.8)';
