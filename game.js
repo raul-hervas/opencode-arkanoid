@@ -8,6 +8,7 @@ const state = {
   gameOver: false,
   started: false,
   particles: [],
+  lifeFade: 0,
 };
 
 const paddle = {
@@ -45,6 +46,17 @@ const PARTICLES = {
 
 const FLASH = {
   duration: 6,
+};
+
+const LIVES_DISPLAY = {
+  count: 3,
+  radius: 6,
+  gap: 18,
+  x: canvas.width - 20,
+  y: 20,
+  activeColor: '#e74c3c',
+  fadedColor: '#555',
+  fadeSpeed: 8,
 };
 
 function spawnParticles(x, y, color) {
@@ -86,6 +98,12 @@ function updateFlashes() {
     if (b.flash > 0) {
       b.flash--;
     }
+  }
+}
+
+function updateLifeFade() {
+  if (state.lifeFade > 0) {
+    state.lifeFade--;
   }
 }
 
@@ -177,12 +195,14 @@ function update() {
       state.running = false;
       state.gameOver = true;
     } else {
+      state.lifeFade = LIVES_DISPLAY.fadeSpeed;
       resetBall();
     }
   }
 
   updateParticles();
   updateFlashes();
+  updateLifeFade();
 }
 
 function resetBall() {
@@ -229,6 +249,24 @@ function drawParticles(ctx) {
   }
 }
 
+function drawLives(ctx) {
+  for (let i = 0; i < LIVES_DISPLAY.count; i++) {
+    const x = LIVES_DISPLAY.x - i * LIVES_DISPLAY.gap;
+    const y = LIVES_DISPLAY.y;
+    if (i < state.lives) {
+      ctx.fillStyle = LIVES_DISPLAY.activeColor;
+    } else if (i === state.lives && state.lifeFade > 0) {
+      const t = state.lifeFade / LIVES_DISPLAY.fadeSpeed;
+      ctx.fillStyle = `rgb(${Math.round(85 + 176 * t)},${Math.round(76 + 24 * t)},${Math.round(85 + 48 * t)})`;
+    } else {
+      ctx.fillStyle = LIVES_DISPLAY.fadedColor;
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, LIVES_DISPLAY.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -246,10 +284,13 @@ function render() {
 
   drawParticles(ctx);
 
+  if (state.started && !state.gameOver) {
+    drawLives(ctx);
+  }
+
   ctx.fillStyle = '#fff';
   ctx.font = '16px monospace';
   ctx.fillText('Score: ' + state.score, 10, 20);
-  ctx.fillText('Lives: ' + state.lives, canvas.width - 90, 20);
 
   if (!state.started) {
     ctx.fillStyle = 'rgba(0,0,0,0.8)';
