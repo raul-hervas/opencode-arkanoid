@@ -59,6 +59,55 @@ const LIVES_DISPLAY = {
   fadeSpeed: 8,
 };
 
+const SOUND_PATHS = {
+  hit: 'assets/audio/hit.wav',
+  break: 'assets/audio/break.wav',
+  bounce: 'assets/audio/bounce.wav',
+};
+
+const audio = {
+  muted: JSON.parse(localStorage.getItem('arkanoid_muted') || 'false'),
+  sounds: {
+    hit: null,
+    break: null,
+    bounce: null,
+  },
+};
+
+const MUTE_BTN = {
+  x: 10,
+  y: canvas.height - 30,
+  size: 20,
+};
+
+function initAudio() {
+  for (const [name, path] of Object.entries(SOUND_PATHS)) {
+    audio.sounds[name] = new Audio(path);
+    audio.sounds[name].volume = audio.muted ? 0 : 1;
+  }
+}
+
+function playSound(name) {
+  if (audio.muted || !audio.sounds[name]) return;
+  const sound = audio.sounds[name];
+  sound.currentTime = 0;
+  sound.play().catch(() => {});
+}
+
+function drawMuteButton(ctx) {
+  ctx.fillStyle = '#fff';
+  ctx.font = '16px monospace';
+  ctx.fillText(audio.muted ? '🔇' : '🔊', MUTE_BTN.x, MUTE_BTN.y);
+}
+
+function toggleMute() {
+  audio.muted = !audio.muted;
+  localStorage.setItem('arkanoid_muted', JSON.stringify(audio.muted));
+  for (const sound of Object.values(audio.sounds)) {
+    if (sound) sound.volume = audio.muted ? 0 : 1;
+  }
+}
+
 function spawnParticles(x, y, color) {
   for (let i = 0; i < PARTICLES.count; i++) {
     if (state.particles.length >= PARTICLES.maxActive) {
@@ -138,9 +187,11 @@ function update() {
 
   if (ball.x - ball.radius <= 0 || ball.x + ball.radius >= canvas.width) {
     ball.dx = -ball.dx;
+    playSound('bounce');
   }
   if (ball.y - ball.radius <= 0) {
     ball.dy = -ball.dy;
+    playSound('bounce');
   }
 
   if (
@@ -178,12 +229,14 @@ function update() {
       }
       if (b.hp > 1) {
         b.flash = FLASH.duration;
+        playSound('hit');
       }
       b.hp--;
       if (b.hp <= 0) {
         b.alive = false;
         state.score += BRICK_SCORE * BRICK_HP[b.color];
         spawnParticles(b.x + b.width / 2, b.y + b.height / 2, b.color);
+        playSound('break');
       }
       break;
     }
@@ -286,6 +339,7 @@ function render() {
 
   if (state.started && !state.gameOver) {
     drawLives(ctx);
+    drawMuteButton(ctx);
   }
 
   ctx.fillStyle = '#fff';
@@ -331,8 +385,19 @@ document.addEventListener('keydown', (e) => {
 });
 document.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  if (x >= MUTE_BTN.x && x <= MUTE_BTN.x + MUTE_BTN.size &&
+      y >= MUTE_BTN.y - MUTE_BTN.size && y <= MUTE_BTN.y) {
+    toggleMute();
+  }
+});
+
 loadSpritesheet(() => {
   console.log('Spritesheet loaded');
+  initAudio();
   createBricks();
   requestAnimationFrame(gameLoop);
 });
